@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Tea Nook Gallery Tracker</title>
+<style>
+    :root {
+        --bg: #fff7fb;
+        --bg-soft: #fff0f7;
+        --card: #ffffff;
+        --text: #3f2f3f;
+        --muted: #7c6478;
+        --heading: #2f1d2f;
+        --border: #f3d8e8;
+        --r30: #d946ef;
+        --r28: #8b5cf6;
+        --r25: #0ea5e9;
+        --r23: #10b981;
+        --r21: #f59e0b;
+        --warning-bg: #fff1f2;
+        --warning-text: #be123c;
+        --shadow: 0 12px 30px rgba(124, 58, 100, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background:
+            radial-gradient(circle at top left, #ffe4f3 0, transparent 35%),
+            radial-gradient(circle at bottom right, #e0f2fe 0, transparent 35%),
+            var(--bg);
+        color: var(--text);
+        padding: 28px;
+    }
+    header { max-width: 1200px; margin: 0 auto 28px; text-align: center; }
+    h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.4rem); color: var(--heading); letter-spacing: -1px; }
+    .subtitle { margin-top: 10px; color: var(--muted); font-size: 1rem; }
+    .toolbar { max-width: 1200px; margin: 0 auto 24px; display: grid; grid-template-columns: 1fr 220px 260px; gap: 14px; }
+    input, select { width: 100%; border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px; font-size: 1rem; background: rgba(255,255,255,0.88); color: var(--text); box-shadow: 0 6px 18px rgba(124,58,100,0.08); outline: none; }
+    input:focus, select:focus { border-color: #e879f9; box-shadow: 0 0 0 4px rgba(232, 121, 249, 0.15); }
+    .stats { max-width: 1200px; margin: 0 auto 26px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stat { background: rgba(255,255,255,0.82); border: 1px solid var(--border); border-radius: 22px; padding: 16px; text-align: center; box-shadow: var(--shadow); }
+    .stat strong { display: block; font-size: 1.8rem; color: var(--heading); }
+    .stat span { color: var(--muted); font-size: 0.9rem; }
+    .grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 20px; }
+    .member-card { background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 28px; padding: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .member-card::before { content: ""; position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: linear-gradient(135deg, #fbcfe8, #bae6fd); border-radius: 50%; opacity: 0.5; }
+    .member-header { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+    .member-name { margin: 0; font-size: 1.35rem; color: var(--heading); }
+    .count-pill { white-space: nowrap; background: var(--bg-soft); color: #9d174d; border: 1px solid #fbcfe8; border-radius: 999px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; }
+    .warning { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; background: var(--warning-bg); color: var(--warning-text); border: 1px solid #fecdd3; border-radius: 999px; padding: 7px 11px; font-size: 0.82rem; font-weight: 700; margin-bottom: 12px; }
+    ul { position: relative; z-index: 1; list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    li { display: flex; align-items: center; gap: 9px; background: #fffafd; border: 1px solid #f7e3ef; padding: 8px 10px; border-radius: 14px; font-size: 0.94rem; }
+    .tag { min-width: 38px; text-align: center; color: white; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: 0.78rem; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08); }
+    .r30 { background: var(--r30); } .r28 { background: var(--r28); } .r25 { background: var(--r25); } .r23 { background: var(--r23); } .r21 { background: var(--r21); }
+    .note { position: relative; z-index: 1; background: #fffafd; border: 1px dashed #e9b8d6; border-radius: 16px; padding: 12px; color: var(--muted); font-weight: 600; }
+    .empty { max-width: 1200px; margin: 20px auto; text-align: center; color: var(--muted); display: none; }
+    footer { max-width: 1200px; margin: 34px auto 0; text-align: center; color: var(--muted); font-size: 0.9rem; }
+    @media (max-width: 900px) { .toolbar { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { body { padding: 18px; } .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+    <h1>🌸 The Tea Nook Gallery Tracker 🌸</h1>
+    <p class="subtitle">A pretty overview of showcased SR flowers, gallery update notes, and member collections.</p>
+</header>
+<section class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search member or flower name..." />
+    <select id="statusFilter">
+        <option value="all">Show all members</option>
+        <option value="needsUpdate">Needs gallery update</option>
+        <option value="complete">No update note</option>
+    </select>
+    <select id="flowerSort">
+        <option value="pointsDesc">Flowers: Highest points first</option>
+        <option value="pointsAsc">Flowers: Lowest points first</option>
+        <option value="nameAsc">Flowers: A-Z</option>
+        <option value="nameDesc">Flowers: Z-A</option>
+    </select>
+</section>
+<section class="stats">
+    <div class="stat"><strong id="memberCount">0</strong><span>Total Members</span></div>
+    <div class="stat"><strong id="flowerCount">0</strong><span>Total Listed Flowers</span></div>
+    <div class="stat"><strong id="updateCount">0</strong><span>Need Gallery Update</span></div>
+    <div class="stat"><strong id="topCount">0</strong><span>Highest Collection Count</span></div>
+</section>
+<main class="grid" id="memberGrid"></main>
+<p class="empty" id="emptyMessage">No members found matching your search.</p>
+<footer>Made for The Tea Nook guild gallery tracking ✨</footer>
+<script>
+const members = [
+    {
+        "name": "Snoopy King",
+        "flowers": [
+            [
+                "30",
+                "Deep Sea Star Scales"
+            ],
+            [
+                "28",
+                "Moonlake"
+            ],
+            [
+                "28",
+                "Leo-Golden Court"
+            ],
+            [
+                "28",
+                "Gemini"
+            ],
+            [
+                "28",
+                "Coudtide Skiff"
+            ],
+            [
+                "25",
+                "Flame Rose Glory"
+            ],
+            [
+                "25",
+                "Light-Tracing Flower Hourglass"
+            ]
+        ]
+    },
+    {
+        "name": "Wilde Hilde",
+        "flowers": [
+            [
+                "28",
+                "Angel Plume"
+            ],
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "25",
+                "Merrycap"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "25",
+                "Heartbeat Berry"
+            ],
+            [
+                "25",
+                "Starshadow Crystal"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ]
+        ]
+    },
+    {
+        "name": "Orchid",
+        "flowers": [
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "23",
+                "Silver Cicad"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Peach New Dawn Rose"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ]
+        ]
+    },
+    {
+        "name": "Lilacclaudine",
+        "flowers": [
+            [
+                "25",
+                "Rainbow Dome Balloon"
+            ],
+            [
+                "25",
+                "Sweetberry"
+            ],
+            [
+                "23",
+                "Lunar Wisteria"
+            ],
+            [
+                "23",
+                "Cherry Pink Plumeria"
+            ],
+            [
+                "23",
+                "Snowfall Baby Primrose"
+            ],
+            [
+                "23",
+                "Smokepink Hibiscus"
+            ],
+            [
+                "23",
+                "Pink Snowflake"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ]
+        ]
+    },
+    {
+        "name": "Nixx",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "25",
+                "Dewy Floral Fragrance"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "21",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "21",
+                "Yellow Bearded Iris"
+            ],
+            [
+                "21",
+                "Blue Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Orange Amaryllis"
+            ]
+        ]
+    },
+    {
+        "name": "Coco Beans",
+        "flowers": [
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "25",
+                "Pink Lotus"
+            ],
+            [
+                "25",
+                "Sweet Heartberry"
+            ],
+            [
+                "25",
+                "Rainbow Courier"
+            ],
+            [
+                "23",
+                "Silver Cycad"
+            ],
+            [
+                "21",
+                "Midnight Dahlia"
+            ],
+            [
+                "21",
+                "Purple Cosmos"
+            ],
+            [
+                "21",
+                "Blue & Pink Evening Primrose"
+            ]
+        ]
+    },
+    {
+        "name": "Kayla Ford",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ]
+        ]
+    },
+    {
+        "name": "Juliet",
+        "flowers": [
+            [
+                "25",
+                "Sweet Heartberry"
+            ],
+            [
+                "25",
+                "Starshadow Crystal"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Purple Giant Allium"
+            ],
+            [
+                "21",
+                "Yesterday-Today-Tomorrow"
+            ],
+            [
+                "21",
+                "Orange Star Orchid"
+            ],
+            [
+                "21",
+                "Crimson Hollyhock"
+            ]
+        ]
+    },
+    {
+        "name": "Gisele",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "28",
+                "Cloudtide Skiff"
+            ],
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Bear Voice Box"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "23",
+                "Lunar Wisteria"
+            ],
+            [
+                "23",
+                "Lavender Marguerite"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "21",
+                "Yellow & Pink & Blue Evening Primrose"
+            ]
+        ]
+    },
+    {
+        "name": "Glenda",
+        "flowers": [
+            [
+                "25",
+                "Peach Unicorn"
+            ],
+            [
+                "25",
+                "Blue Crystal Butterfly Rose"
+            ],
+            [
+                "25",
+                "Dreamborne Galaxy"
+            ],
+            [
+                "23",
+                "Orange Dancing Lady Orchid"
+            ],
+            [
+                "23",
+                "Yellow-Pink Bearded Iris"
+            ],
+            [
+                "23",
+                "Light Blue Astilbe"
+            ],
+            [
+                "23",
+                "Pink Amaryllis"
+            ],
+            [
+                "23",
+                "White Weeping Cherry"
+            ],
+            [
+                "23",
+                "Light Blue Wisteria"
+            ],
+            [
+                "23",
+                "Blue Cornflower"
+            ]
+        ]
+    },
+    {
+        "name": "Cassiopeia",
+        "flowers": [
+            [
+                "25",
+                "Peach Unicorn"
+            ],
+            [
+                "25",
+                "Blue Crystal Butterfly Rose"
+            ],
+            [
+                "25",
+                "Dreamborne Galaxy"
+            ],
+            [
+                "25",
+                "Rainbow Courier"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "23",
+                "Orange Dancing Lady Orchid"
+            ],
+            [
+                "23",
+                "Yellow-Pink Bearded Iris"
+            ],
+            [
+                "23",
+                "Light Blue Astilbe"
+            ],
+            [
+                "23",
+                "Pink Amaryllis"
+            ],
+            [
+                "23",
+                "White Weeping Cherry"
+            ],
+            [
+                "23",
+                "Light Blue Wisteria"
+            ],
+            [
+                "23",
+                "Blue Cornflower"
+            ],
+            [
+                "23",
+                "Purple Iceland Poppy"
+            ],
+            [
+                "23",
+                "Light Orange Verbena"
+            ],
+            [
+                "23",
+                "Purple Magnolia"
+            ]
+        ]
+    },
+    {
+        "name": "Riqqie",
+        "flowers": [
+            [
+                "25",
+                "Dewy Floral Fragrance"
+            ],
+            [
+                "25",
+                "Flame Rose Glory"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Peach Wintersweet"
+            ],
+            [
+                "25",
+                "Purple Hibiscus Jewelry Box"
+            ],
+            [
+                "25",
+                "Dreamborne Galaxy"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Pink Cherry Blossom"
+            ],
+            [
+                "25",
+                "Blue Dream Shell"
+            ],
+            [
+                "25",
+                "Maroon Wintersweet"
+            ]
+        ]
+    },
+    {
+        "name": "Chinese Flag",
+        "flowers": [
+            [
+                "25",
+                "Orange Hibiscus Jewelry Box"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Kylie Bailey",
+        "flowers": [
+            [
+                "21",
+                "Pink & White Lilyturf"
+            ],
+            [
+                "21",
+                "Crimson Dahlia"
+            ],
+            [
+                "21",
+                "Yesterday-Today-Tomorrow"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Scarlet Sea Anemone"
+            ],
+            [
+                "21",
+                "Pink Tree Peony"
+            ]
+        ]
+    },
+    {
+        "name": "Kartoffle Master",
+        "flowers": [
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "23",
+                "Purple Anemone"
+            ],
+            [
+                "21",
+                "Pink & Yellow Evening Primrose"
+            ],
+            [
+                "21",
+                "Orange Flaming Katy"
+            ],
+            [
+                "21",
+                "Purple Giant Allium"
+            ],
+            [
+                "21",
+                "Yellow Bearded Iris"
+            ],
+            [
+                "21",
+                "Crimson Dahlia"
+            ],
+            [
+                "21",
+                "Orange Star Orchid"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ],
+            [
+                "21",
+                "Red & Pink Iron Chopstick Flower"
+            ],
+            [
+                "21",
+                "Orange Coral Reef"
+            ],
+            [
+                "21",
+                "Blue Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Blue Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Red & Pink Iron Chopstick Flower"
+            ]
+        ]
+    },
+    {
+        "name": "Charmaine",
+        "flowers": [
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Calypso",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ]
+        ]
+    },
+    {
+        "name": "Candida",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "21",
+                "Red Winterberry"
+            ]
+        ]
+    },
+    {
+        "name": "Ms Yellow Duck",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Woodstock",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Pink Anemone"
+            ],
+            [
+                "21",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "21",
+                "Yesterday-Today-Tomorrow"
+            ],
+            [
+                "21",
+                "Crimson Hollyhock"
+            ],
+            [
+                "21",
+                "Orange Flamin Katy"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Pink Evening Primrose"
+            ],
+            [
+                "21",
+                "Yellow Bearded Iris"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ]
+        ]
+    },
+    {
+        "name": "Svenja",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ]
+        ]
+    },
+    {
+        "name": "Kayla",
+        "flowers": [
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "23",
+                "Blue Cornflower"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Yesterday-Today-Tomorrow"
+            ],
+            [
+                "21",
+                "Crimson Hollyhock"
+            ]
+        ]
+    },
+    {
+        "name": "Roselisse",
+        "note": "Ask to update gallery",
+        "textOnly": "Only Normal And R Flowers",
+        "flowers": []
+    },
+    {
+        "name": "Jenna",
+        "flowers": [
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "23",
+                "Peach Flamingo Flower"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink & Blue Evening Primrose"
+            ],
+            [
+                "21",
+                "Orange Star Orchid"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Pink Anemone"
+            ],
+            [
+                "21",
+                "Blue Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Pink Crystal Butterfly Rose"
+            ]
+        ]
+    },
+    {
+        "name": "Florence",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "23",
+                "Light Pink Verbena"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Crystsl Sand",
+        "note": "Ask to update gallery",
+        "textOnly": "No Flowers Showcased",
+        "flowers": []
+    },
+    {
+        "name": "Celeste",
+        "note": "Ask to update gallery",
+        "textOnly": "No Sr Flowers Showcased",
+        "flowers": []
+    },
+    {
+        "name": "Ajie",
+        "flowers": [
+            [
+                "25",
+                "Peach Wintersweet"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Peach Wintersweet"
+            ]
+        ]
+    },
+    {
+        "name": "Imanrose",
+        "flowers": [
+            [
+                "25",
+                "Dewy Floral Fragrance"
+            ],
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "23",
+                "Pink Marguerite"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ],
+            [
+                "21",
+                "Orange Star Orchid"
+            ],
+            [
+                "21",
+                "Crimson Hollyhock"
+            ],
+            [
+                "21",
+                "Pink Evening Primrose"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Ava Hawkings",
+        "flowers": [
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "25",
+                "Heartbeat Berry"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Peach Wintersweet"
+            ],
+            [
+                "25",
+                "Pink Unicorn"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "23",
+                "Blue Cornflower"
+            ],
+            [
+                "23",
+                "Purple Iceland Poppy"
+            ],
+            [
+                "23",
+                "Light Pink Verbena"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "23",
+                "Yellow-Green Boat Orchid"
+            ],
+            [
+                "23",
+                "Red Crabapple Impatiens"
+            ],
+            [
+                "23",
+                "Crimson-Gold French Marigold"
+            ],
+            [
+                "23",
+                "Azure Nemesia"
+            ],
+            [
+                "23",
+                "Purple Scabiosa"
+            ],
+            [
+                "23",
+                "Radiant Lotus Cluster"
+            ],
+            [
+                "23",
+                "Brimming Jade Cluster"
+            ],
+            [
+                "23",
+                "Azure Coral Reef"
+            ]
+        ]
+    },
+    {
+        "name": "Ayen",
+        "flowers": [
+            [
+                "28",
+                "Cloudshine Envoy"
+            ],
+            [
+                "25",
+                "Dewy Floral Fragrance"
+            ],
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "23",
+                "Purple Scabiosa"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "23",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "21",
+                "Silver & Yelow Osmanthus"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Red Iron Chopstick Flower"
+            ],
+            [
+                "21",
+                "Yellow Morning Dew Lily"
+            ]
+        ]
+    },
+    {
+        "name": "Azem",
+        "flowers": [
+            [
+                "25",
+                "Blue Dream Shell"
+            ],
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "25",
+                "Flame Rose Glory"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ]
+        ]
+    },
+    {
+        "name": "Arie",
+        "flowers": [
+            [
+                "23",
+                "Peach Flamingo Flower"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Midnight Dahlia"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ],
+            [
+                "21",
+                "Pink Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Chiya",
+        "flowers": [
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Starshadow Crystal"
+            ],
+            [
+                "23",
+                "Purple & White Blue-Eyed & Pink Anemone"
+            ],
+            [
+                "23",
+                "Crimson-Gold & Vermillion-Yellow French Marigold"
+            ],
+            [
+                "23",
+                "White Gladiolus"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ],
+            [
+                "21",
+                "White Tree Peony"
+            ],
+            [
+                "21",
+                "Soft Pink Weeping Cherry"
+            ],
+            [
+                "21",
+                "Pink Lewisia"
+            ],
+            [
+                "21",
+                "Pink Cornflower"
+            ],
+            [
+                "21",
+                "White Star Of Bethlehem"
+            ],
+            [
+                "21",
+                "Blue Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Yellow Evening Primrose"
+            ]
+        ]
+    },
+    {
+        "name": "Rimari",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "28",
+                "Twigwitch"
+            ],
+            [
+                "28",
+                "Sugarfrost Witch"
+            ],
+            [
+                "28",
+                "Wave-Riding Summer Witch"
+            ],
+            [
+                "28",
+                "Gemini"
+            ],
+            [
+                "28",
+                "Cloudshine Envoy"
+            ],
+            [
+                "28",
+                "Cloudtide Skiff"
+            ],
+            [
+                "25",
+                "Pink Unicorn"
+            ],
+            [
+                "25",
+                "Merrycap"
+            ],
+            [
+                "25",
+                "Moonbathing Crane"
+            ],
+            [
+                "25",
+                "Heartbeat Berry"
+            ],
+            [
+                "25",
+                "Starshadow Crystal"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Rainbow Dome Balloon"
+            ],
+            [
+                "25",
+                "Apple Cat Cottage"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "25",
+                "Bear Voice Box"
+            ],
+            [
+                "25",
+                "Flame Rose Glory"
+            ]
+        ]
+    },
+    {
+        "name": "Angy.Artist",
+        "note": "Ask to update gallery",
+        "flowers": [
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "23",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "23",
+                "Vermillion-Yellow French Marigold"
+            ]
+        ]
+    },
+    {
+        "name": "Phoenix",
+        "flowers": [
+            [
+                "21",
+                "Pink Hibiscus"
+            ],
+            [
+                "21",
+                "Red Winterberry"
+            ],
+            [
+                "21",
+                "Soft Pink Petunia"
+            ]
+        ]
+    },
+    {
+        "name": "Onyx",
+        "flowers": [
+            [
+                "25",
+                "Pearl Magnolia"
+            ],
+            [
+                "25",
+                "Merrycap"
+            ],
+            [
+                "25",
+                "Peach Unicorn"
+            ],
+            [
+                "25",
+                "Blue Crystal Butterfly Rose"
+            ],
+            [
+                "25",
+                "Heartbeat Berry"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Neon Crystal Lotus"
+            ],
+            [
+                "25",
+                "Suncloud Fleece"
+            ],
+            [
+                "23",
+                "Yellow-Orange & Scarlet & Purple Poppy"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "23",
+                "Light Blue Astilbe"
+            ],
+            [
+                "23",
+                "Peach Flamingo Flower"
+            ],
+            [
+                "23",
+                "White Weeping Cherry"
+            ],
+            [
+                "23",
+                "Pink Snowflake"
+            ],
+            [
+                "23",
+                "Yellow Bumble Rose"
+            ],
+            [
+                "23",
+                "Sunglare Bloom"
+            ],
+            [
+                "23",
+                "Purple Scabiosa"
+            ],
+            [
+                "23",
+                "Lavender Marguerite"
+            ],
+            [
+                "23",
+                "Lunar Wisteria"
+            ],
+            [
+                "23",
+                "Pink Baby Primrose"
+            ],
+            [
+                "23",
+                "Yellow Chinese Hibiscus"
+            ]
+        ]
+    },
+    {
+        "name": "Clementine",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "28",
+                "Angel Plume"
+            ],
+            [
+                "25",
+                "Pink Dream Shell"
+            ],
+            [
+                "25",
+                "Starshadow Crystal"
+            ],
+            [
+                "25",
+                "Gilded Sweet Dream"
+            ],
+            [
+                "25",
+                "Rainbow Dome Ballon"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "23",
+                "Silver Cicad"
+            ],
+            [
+                "23",
+                "Peach Flamingo Flower"
+            ],
+            [
+                "23",
+                "White Blue-Eyed Anemone"
+            ],
+            [
+                "21",
+                "Peach New Dawn Rose"
+            ],
+            [
+                "21",
+                "Orange Coral Reef"
+            ],
+            [
+                "21",
+                "Purple Giant Allium"
+            ],
+            [
+                "21",
+                "Crimson Hollyhock"
+            ],
+            [
+                "21",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "21",
+                "Pink Anemone"
+            ]
+        ]
+    },
+    {
+        "name": "Maple",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "25",
+                "Wavelet Swing"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ]
+        ]
+    },
+    {
+        "name": "Kaede",
+        "flowers": [
+            [
+                "28",
+                "Moonlake Peony"
+            ],
+            [
+                "25",
+                "Shoal Sandcastle"
+            ],
+            [
+                "25",
+                "Joyful Rainbow Duck"
+            ],
+            [
+                "25",
+                "Wavelet Swing"
+            ],
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "23",
+                "Layered Jade Rouge"
+            ],
+            [
+                "23",
+                "Pink Crown King Protea"
+            ],
+            [
+                "23",
+                "Glazed Tidal Lotus"
+            ],
+            [
+                "23",
+                "White Blue-Eyed & Purple Anemone"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "21",
+                "Orange Flaming Katy"
+            ],
+            [
+                "21",
+                "Golden Wintersweet"
+            ],
+            [
+                "21",
+                "Pink Rion Chopstick Flower"
+            ],
+            [
+                "21",
+                "Violet Himalayan Poppy"
+            ],
+            [
+                "21",
+                "Pink Crystal Butterfly Rose"
+            ],
+            [
+                "21",
+                "Soft Pink Weeping Cherry"
+            ]
+        ]
+    },
+    {
+        "name": "Silver Bright",
+        "flowers": [
+            [
+                "25",
+                "Pink Hibiscus Jewelry Box"
+            ],
+            [
+                "25",
+                "Merrycap"
+            ],
+            [
+                "25",
+                "Heartbeat Berry"
+            ],
+            [
+                "25",
+                "Beach Duck Cool Summer"
+            ],
+            [
+                "25",
+                "Flame Rose Glory"
+            ],
+            [
+                "23",
+                "Azure Coral Reef"
+            ],
+            [
+                "23",
+                "Manor Star Purple"
+            ],
+            [
+                "23",
+                "Old Garden Lingering Scent"
+            ],
+            [
+                "23",
+                "Peach Flamingo Flower"
+            ],
+            [
+                "23",
+                "Light Purple Astilbe"
+            ],
+            [
+                "23",
+                "Light Pink Verbena"
+            ],
+            [
+                "23",
+                "Pink Wisteria"
+            ],
+            [
+                "23",
+                "White Bunnycotton"
+            ],
+            [
+                "23",
+                "Yellow Bumble Rose"
+            ],
+            [
+                "23",
+                "Snowfall & Pink Nemesia"
+            ],
+            [
+                "23",
+                "Red Crabapple Impatiens"
+            ],
+            [
+                "23",
+                "Pink & Purple Baby Primrose"
+            ],
+            [
+                "23",
+                "Purple Scabiosa"
+            ]
+        ]
+    }
+];
+const grid = document.getElementById("memberGrid");
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+const flowerSort = document.getElementById("flowerSort");
+const emptyMessage = document.getElementById("emptyMessage");
+function getEmoji(name) {
+    const lower = name.toLowerCase();
+    if (lower.includes("snoopy")) return "👑";
+    if (lower.includes("duck")) return "🦆";
+    if (lower.includes("orchid")) return "🌺";
+    if (lower.includes("lilac")) return "💜";
+    if (lower.includes("rose")) return "🌹";
+    if (lower.includes("crystal") || lower.includes("crystsl")) return "💎";
+    if (lower.includes("celeste")) return "✨";
+    if (lower.includes("woodstock")) return "🌻";
+    if (lower.includes("coco")) return "🍫";
+    if (lower.includes("gisele")) return "🌙";
+    if (lower.includes("glenda")) return "🌷";
+    if (lower.includes("maple")) return "🍁";
+    if (lower.includes("phoenix")) return "🔥";
+    if (lower.includes("onyx")) return "🖤";
+    if (lower.includes("clementine")) return "🍊";
+    return "🌸";
+}
+function getSortedFlowers(flowers) {
+    const sortType = flowerSort.value;
+    const sortedFlowers = [...flowers];
+    if (sortType === "pointsDesc") sortedFlowers.sort((a, b) => Number(b[0]) - Number(a[0]) || a[1].localeCompare(b[1]));
+    if (sortType === "pointsAsc") sortedFlowers.sort((a, b) => Number(a[0]) - Number(b[0]) || a[1].localeCompare(b[1]));
+    if (sortType === "nameAsc") sortedFlowers.sort((a, b) => a[1].localeCompare(b[1]) || Number(b[0]) - Number(a[0]));
+    if (sortType === "nameDesc") sortedFlowers.sort((a, b) => b[1].localeCompare(a[1]) || Number(b[0]) - Number(a[0]));
+    return sortedFlowers;
+}
+function renderMembers() {
+    const search = searchInput.value.toLowerCase().trim();
+    const filter = statusFilter.value;
+    const filtered = members.filter(member => {
+        const flowerText = member.flowers.map(f => f.join(" ")).join(" ").toLowerCase();
+        const searchMatch = member.name.toLowerCase().includes(search) || flowerText.includes(search) || (member.note || "").toLowerCase().includes(search) || (member.textOnly || "").toLowerCase().includes(search);
+        const statusMatch = filter === "all" || (filter === "needsUpdate" && member.note) || (filter === "complete" && !member.note);
+        return searchMatch && statusMatch;
+    });
+    grid.innerHTML = "";
+    filtered.forEach(member => {
+        const card = document.createElement("article");
+        card.className = "member-card";
+        const sortedFlowers = getSortedFlowers(member.flowers);
+        const flowersHTML = sortedFlowers.length ? `<ul>${sortedFlowers.map(([rarity, flower]) => `
+            <li><span class="tag r${rarity}">${rarity}</span><span>${flower}</span></li>
+        `).join("")}</ul>` : "";
+        const noteHTML = member.note ? `<div class="warning">⚠ ${member.note}</div>` : "";
+        const textOnlyHTML = member.textOnly ? `<div class="note">${member.textOnly}</div>` : "";
+        const noFlowerHTML = !member.flowers.length && !member.textOnly ? `<div class="note">No flowers currently listed.</div>` : "";
+        card.innerHTML = `
+            <div class="member-header">
+                <h2 class="member-name">${getEmoji(member.name)} ${member.name}</h2>
+                <span class="count-pill">${member.flowers.length} item${member.flowers.length === 1 ? "" : "s"}</span>
+            </div>
+            ${noteHTML}
+            ${textOnlyHTML}
+            ${flowersHTML}
+            ${noFlowerHTML}
+        `;
+        grid.appendChild(card);
+    });
+    emptyMessage.style.display = filtered.length ? "none" : "block";
+    updateStats();
+}
+function updateStats() {
+    const totalMembers = members.length;
+    const totalFlowers = members.reduce((sum, member) => sum + member.flowers.length, 0);
+    const needsUpdate = members.filter(member => member.note).length;
+    const highestCount = Math.max(...members.map(member => member.flowers.length));
+    document.getElementById("memberCount").textContent = totalMembers;
+    document.getElementById("flowerCount").textContent = totalFlowers;
+    document.getElementById("updateCount").textContent = needsUpdate;
+    document.getElementById("topCount").textContent = highestCount;
+}
+searchInput.addEventListener("input", renderMembers);
+statusFilter.addEventListener("change", renderMembers);
+flowerSort.addEventListener("change", renderMembers);
+renderMembers();
+</script>
+</body>
+</html>
